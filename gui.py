@@ -1,4 +1,11 @@
 from tkinter import *
+from os import path, getcwd
+
+from sql import SQL
+
+
+def raise_frame(frame: Frame):
+    frame.tkraise()
 
 
 class StartPage(Frame):
@@ -8,6 +15,7 @@ class StartPage(Frame):
         self.grid(sticky=NSEW)
         lbl = Label(self, text="Welcome to the Yordan's Secret Santa app!\nWhat do you want to do today?")
         lbl.pack(fill=BOTH, expand=TRUE)
+        opt = IntVar()
         r1 = Radiobutton(self, text="Add participants manually", variable=opt, value=1)
         r1.pack(anchor=W)
         r2 = Radiobutton(self, text="Import participants from a txt file", variable=opt, value=2)
@@ -40,55 +48,79 @@ class HowManyParticipants(Frame):
         self.grid(sticky=NSEW, padx=5, pady=5)
         Label(self, text="How many participants do you want to enter?").grid(row=0, sticky=NS)
         Label(self, text="Enter number here:").grid(row=1, column=0, sticky=W)
+        # TODO Check if file already exists and, if it does, ask whether to use or delete
+        self.lbl = Label(self)
+        self.lbl.grid(row=2, column=0, sticky=W)
         p = Entry(self)
         p.grid(row=1, column=1, sticky=E)
         btn = Button(self, text="Continue", command=lambda: self.command(p), width=10)
         btn.grid(row=3, column=1, sticky=SE)
 
     def command(self, i):
-        print("WIP")
+        print("The user inputted %s" % str(i.get()))
+        try:
+            if int(i.get()) < 5:
+                self.lbl.configure(text="You need to enter at least 5 participants!")
+            else:
+                print("Expected participants are %s before the update" % str(ep.exp_part))
+                ep.exp_part = i.get()
+                ep.exp.configure(text="You have entered 0 out of %s participants" % i.get())
+                print("Expected participants are %s after the update" % str(ep.exp_part))
+                raise_frame(ep)
+        except Exception as e:
+            self.lbl.configure(text="Please enter a number!")
 
 
 class EnterParticipants(Frame):
     def __init__(self, master):
         Frame.__init__(self, master)
-        self.grid()
-        # Grid.columnconfigure(self, 0, weight=1)
-        # Grid.rowconfigure(self, 0, weight=1)
+        self.grid(sticky=NSEW)
         # Make below say: You have enter X participants so far
-        exp = Label(self, text="").grid(row=0, column=0)
-        ent = Label(self, text="You have enter 0 participants so far").grid(row=0, column=0)
-        Label(self, text="Enter the participant’s details:").grid(row=0, column=0)
-        Label(self, text="Enter the participant’s details:").grid(row=0, column=0)
-        lbl = Label(self, text="")
-        lbl.grid(row=1, column=0)
-        Label(self, text="Name: ").grid(row=2, column=0, sticky=W, padx=5)
-        name = Entry(self)
-        name.grid(row=2, column=1, columnspan=2, sticky=NSEW, padx=5)
-        Label(self, text="Email: ").grid(row=3, column=0, sticky=W, padx=5)
-        email = Entry(self)
-        email.grid(row=3, column=1, columnspan=2, sticky=NSEW, padx=5)
-        Label(self, text="Address number: ").grid(row=4, column=0, sticky=W, padx=5)
-        house = Entry(self)
-        house.grid(row=4, column=1, sticky=NSEW, padx=5)
-        Label(self, text="Postcode: ").grid(row=5, column=0, sticky=W, padx=5)
-        post = Entry(self)
-        post.grid(row=5, column=1, sticky=NSEW, padx=5)
-        btn = Button(self, text="Continue", command=lambda: self.command(e, lbl), width=10)
-        btn.grid(row=6, column=2, sticky=E, padx=5, pady=5)
+        self.exp_part = 0
+        self.ent_part = 0
+        Label(self, text="Expecting " + str(self.exp_part) + " more participants")
+        self.exp = Label(self, text="You have entered %s out of %s participants" % (self.exp_part, self.ent_part))
+        self.exp.grid(row=0, column=0, columnspan=3)
+        self.err = Label(self)
+        self.err.grid(row=1, column=0, columnspan=3)
+        Label(self, text="Enter the participant’s details:").grid(row=2, column=0, columnspan=3)
+        Label(self, text="Name: ").grid(row=4, column=0, sticky=W, padx=5)
+        self.name = Entry(self)
+        self.name.grid(row=4, column=1, columnspan=2, sticky=NSEW, padx=5)
+        Label(self, text="Email: ").grid(row=5, column=0, sticky=W, padx=5)
+        self.email = Entry(self)
+        self.email.grid(row=5, column=1, columnspan=2, sticky=NSEW, padx=5)
+        Label(self, text="Address number: ").grid(row=6, column=0, sticky=W, padx=5)
+        self.house = Entry(self)
+        self.house.grid(row=6, column=1, sticky=NSEW, padx=5)
+        Label(self, text="Postcode: ").grid(row=7, column=0, sticky=W, padx=5)
+        self.post = Entry(self)
+        self.post.grid(row=7, column=1, sticky=NSEW, padx=5)
+        btn = Button(self, text="Continue", command=lambda: self.add_user(self.name, self.email, self.house, self.post), width=10)
+        btn.grid(row=8, column=2, sticky=E, padx=5, pady=5)
 
-    def write_details(self, name, email, house, postcode):
-        file_path = os.path.join(os.getcwd(), "participants.txt")
-        file = open(file_path, "a+")
-        file.write("\n" + name + ", " + email + ", " + house + ", " + postcode)
+    def update_bar_re_adding_user(self):
+        self.err.configure(text="User added!")
+        self.ent_part = self.ent_part + 1
+        self.exp.configure(text="You have entered %s out of %s participants" % (self.ent_part, self.exp_part))
 
-    def command(self, i, a):
-        import os
-        file_path = os.path.join(os.getcwd(), str(i.get()))
-        if not os.path.exists(file_path):
-            a.configure(text="File cannot be found!\nImport the file and try again.")
-        else:
-            a.configure(text="File found!")
+    def clear_text(self):
+        self.name.delete(0, 'end')
+        self.email.delete(0, 'end')
+        self.house.delete(0, 'end')
+        self.post.delete(0, 'end')
+
+    def add_user(self, name, email, house, postcode):
+        try:
+            print("Adding user " + name.get())
+            db.add_user(name.get(), email.get(), house.get(), postcode.get())
+            self.clear_text()
+            self.update_bar_re_adding_user()
+
+        except Exception as e:
+            print("The error is: " + str(e))
+            self.err.configure(text="There was an error while adding the user. Try again!")
+
 
 
 class ImportParticipants(Frame):
@@ -107,9 +139,8 @@ class ImportParticipants(Frame):
         btn.pack(side=BOTTOM, anchor=E, pady=5, padx=5)
 
     def command(self, i, a):
-        import os
-        file_path = os.path.join(os.getcwd(), str(i.get()))
-        if not os.path.exists(file_path):
+        file_path = path.join(getcwd(), str(i.get()))
+        if not path.exists(file_path):
             a.configure(text="File cannot be found!\nImport the file and try again.")
         else:
             a.configure(text="File found!")
@@ -130,8 +161,9 @@ class Navigation(Frame):
         raise_frame(s)
 
     def close(self):
-        db.close()
+        # db.close()
         exit()
+
 
 class WorkInProgress(Frame):
 
@@ -142,11 +174,8 @@ class WorkInProgress(Frame):
 
 
 if __name__ == '__main__':
-    def raise_frame(frame):
-        frame.tkraise()
 
     root = Tk()
-    opt = IntVar()
     root.title("Secret Santa")
     # TODO Mess with design later
     # root.configure(bg="gray")
@@ -156,12 +185,16 @@ if __name__ == '__main__':
     # root.iconbitmap("santa.ico")
     root.resizable(width=False, height=False)
 
+    db = SQL()
+
     s = StartPage(root)
     hmp = HowManyParticipants(root)
     ep = EnterParticipants(root)
     ip = ImportParticipants(root)
     wip = WorkInProgress(root)
     nav = Navigation(root)
+
+    num_of_part = 0
 
     for frame in (s, ep, ip, hmp, wip):
         frame.grid(row=0, column=0, sticky='news')

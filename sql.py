@@ -17,9 +17,14 @@ class SQL:
             print(e)
 
     def add_user(self, name, email, house, postcode):
-        self.cursor.execute("""INSERT INTO participants(name, email, house, postcode) VALUES(?,?,?,?)""",
-                            (name, email, house, postcode))
-        self.db.commit()
+        try:
+            self.cursor.execute("""INSERT INTO participants(name, email, house, postcode) VALUES(?,?,?,?)""",
+                                (name, email, house, postcode))
+            self.db.commit()
+        except Exception as e:
+            print("Encountered following error: " + e)
+            self.db.rollback()
+            return e
 
     def fetch_participants(self):
         self.cursor.execute("""SELECT * FROM participants""")
@@ -29,8 +34,8 @@ class SQL:
         self.cursor.execute("""DROP TABLE participants""")
         self.db.commit()
 
-    # def close(self):
-    #     self.db.close()
+    def close(self):
+        self.db.close()
 
 
 if __name__ == '__main__':
@@ -47,4 +52,4 @@ if __name__ == '__main__':
     for u in users:
         print("User %s is %s" % (users.index(u), str(u)))
 
-    db.db.close()
+    db.close()
