@@ -167,8 +167,10 @@ class Navigation(Frame):
         self.grid(sticky=NSEW)
         btn = Button(self, text="Home", command=lambda: self.home(), width=10)
         btn.pack(side=LEFT, anchor=E, pady=5, padx=5)
-        btn = Button(self, text="Exit", command=lambda: self.close(), width=10)
-        btn.pack(side=LEFT, anchor=E, pady=5, padx=5)
+        btn1 = Button(self, text="Exit", command=lambda: self.close(), width=10)
+        btn1.pack(side=LEFT, anchor=E, pady=5, padx=5)
+        btn2 = Button(self, text="Reset DB", command=lambda: self.clear_db(), width=10)
+        btn2.pack(side=LEFT, anchor=E, pady=5, padx=5)
         # TODO Link below with GitHub release version
         Label(self, text="v0.2 Yordan Angelov Copyright 2018").pack(side=RIGHT, padx=5)
 
@@ -176,8 +178,12 @@ class Navigation(Frame):
         raise_frame(s)
 
     def close(self):
-        # db.close()
+        db.close()
         exit()
+
+    def clear_db(self):
+        print("DB dropped!")
+        db.reset_records()
 
 
 class WorkInProgress(Frame):
@@ -198,16 +204,21 @@ class SendEmailsPage(Frame):
         self.lbl.pack(fill=BOTH, expand=TRUE)
         self.update_label()
         self.pairs = {}
-        self.btn = Button(self, text="Pair participants", command=self.randomise_santas())
+        self.btn = Button(self, text="Pair participants", command=lambda: self.randomise_santas())
         self.btn.pack(anchor=SE, padx=5, pady=5)
 
     def randomise_santas(self):
-    # looping animation while you wait saying "Pairing participants..."
-        print("WIP")
+        # looping animation while you wait saying "Pairing participants..."
+        # Can be restored by just using self.btn.pack(args*)
+        self.btn.pack_forget()
+        self.lbl.configure(text="Randomising pairs...")
 
     def update_label(self):
         self.part = len(db.fetch_participants())
         self.lbl.configure(text="You have now added %s participants" % str(self.part))
+
+    def update_btn(self):
+        self.btn.configure(text="")
 
 
 if __name__ == '__main__':

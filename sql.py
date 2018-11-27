@@ -8,14 +8,7 @@ class SQL:
         print("Creating db and cursor...")
         self.db = connect("data.db")
         self.cursor = self.db.cursor()
-        try:
-            print("Creating table...")
-            # TODO Update schema to not accept empty values
-            self.cursor.execute("""
-            CREATE TABLE participants(id INTEGER PRIMARY KEY, name TEXT, email TEXT unique, house TEXT, postcode TEXT)
-            """)
-        except Exception as e:
-            print(e)
+        self.create_table()
 
     def add_user(self, name, email, house, postcode):
         try:
@@ -31,12 +24,26 @@ class SQL:
         self.cursor.execute("""SELECT * FROM participants""")
         return self.cursor.fetchall()
 
-    def delete_database(self):
+    def reset_records(self):
         self.cursor.execute("""DROP TABLE participants""")
+        self.db.commit()
+        self.create_table()
         self.db.commit()
 
     def close(self):
         self.db.close()
+
+    def create_table(self):
+        try:
+            print("Creating table...")
+            # TODO Update schema to not accept empty values
+            self.cursor.execute("""
+            CREATE TABLE participants(id INTEGER PRIMARY KEY, name TEXT, email TEXT unique, house TEXT, postcode TEXT)
+            """)
+            self.db.commit()
+            print("Table created!")
+        except Exception as e:
+            print(e)
 
 
 if __name__ == '__main__':
