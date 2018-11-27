@@ -7,6 +7,13 @@ from sql import SQL
 def raise_frame(frame: Frame):
     frame.tkraise()
 
+# TODO Move main code to App and just start it once in the __init__ = "__main__"
+# class App():
+#     if __name__ == '__main__':
+#
+#     def start(self):
+#         self.root.mainloop()
+
 
 class StartPage(Frame):
 
@@ -75,7 +82,10 @@ class EnterParticipants(Frame):
     def __init__(self, master):
         Frame.__init__(self, master)
         self.grid(sticky=NSEW)
-        # Make below say: You have enter X participants so far
+
+        # TODO Works, but is clicked whenever the app starts - resolve as part of post-MVP
+        # self.bind('<Return>', self.add_user("", "", "", ""))
+
         self.exp_part = 0
         self.ent_part = 0
         Label(self, text="Expecting " + str(self.exp_part) + " more participants")
@@ -116,11 +126,15 @@ class EnterParticipants(Frame):
             db.add_user(name.get(), email.get(), house.get(), postcode.get())
             self.clear_text()
             self.update_bar_re_adding_user()
+            print("Expected participants are %s and entered ones are %s" % (self.exp_part, self.ent_part))
+            if int(self.exp_part) == int(self.ent_part):
+                sep.update_label()
+                raise_frame(sep)
 
+        # TODO Add error for duplicate email or empty input
         except Exception as e:
             print("The error is: " + str(e))
             self.err.configure(text="There was an error while adding the user. Try again!")
-
 
 
 class ImportParticipants(Frame):
@@ -155,7 +169,8 @@ class Navigation(Frame):
         btn.pack(side=LEFT, anchor=E, pady=5, padx=5)
         btn = Button(self, text="Exit", command=lambda: self.close(), width=10)
         btn.pack(side=LEFT, anchor=E, pady=5, padx=5)
-        Label(self, text="v0.1 Yordan Angelov Copyright 2018").pack(side=RIGHT, padx=5)
+        # TODO Link below with GitHub release version
+        Label(self, text="v0.2 Yordan Angelov Copyright 2018").pack(side=RIGHT, padx=5)
 
     def home(self):
         raise_frame(s)
@@ -173,8 +188,32 @@ class WorkInProgress(Frame):
         Label(self, text="SYCHE! YOU THOUGHT IT WAS COMPLETED!").pack(fill=BOTH, expand=TRUE)
 
 
+class SendEmailsPage(Frame):
+
+    def __init__(self, master):
+        Frame.__init__(self, master)
+        self.grid(sticky=NSEW)
+        self.part = len(db.fetch_participants())
+        self.lbl = Label(self)
+        self.lbl.pack(fill=BOTH, expand=TRUE)
+        self.update_label()
+        self.pairs = {}
+        self.btn = Button(self, text="Pair participants", command=self.randomise_santas())
+        self.btn.pack(anchor=SE, padx=5, pady=5)
+
+    def randomise_santas(self):
+    # looping animation while you wait saying "Pairing participants..."
+        print("WIP")
+
+    def update_label(self):
+        self.part = len(db.fetch_participants())
+        self.lbl.configure(text="You have now added %s participants" % str(self.part))
+
+
 if __name__ == '__main__':
 
+    # TODO Add submission of Entry fields with Enter
+    # TODO Adjust all windows to have the same # of rows and columns
     root = Tk()
     root.title("Secret Santa")
     # TODO Mess with design later
@@ -193,10 +232,9 @@ if __name__ == '__main__':
     ip = ImportParticipants(root)
     wip = WorkInProgress(root)
     nav = Navigation(root)
+    sep = SendEmailsPage(root)
 
-    num_of_part = 0
-
-    for frame in (s, ep, ip, hmp, wip):
+    for frame in (s, ep, ip, hmp, wip, sep):
         frame.grid(row=0, column=0, sticky='news')
 
     nav.grid(row=1, column=0, sticky='news')

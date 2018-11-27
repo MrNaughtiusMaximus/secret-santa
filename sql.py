@@ -10,6 +10,7 @@ class SQL:
         self.cursor = self.db.cursor()
         try:
             print("Creating table...")
+            # TODO Update schema to not accept empty values
             self.cursor.execute("""
             CREATE TABLE participants(id INTEGER PRIMARY KEY, name TEXT, email TEXT unique, house TEXT, postcode TEXT)
             """)
