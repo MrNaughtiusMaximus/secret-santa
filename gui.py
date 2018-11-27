@@ -1,7 +1,13 @@
 from tkinter import *
 from os import path, getcwd
+from playsound import playsound
+from random import randint
 
 from sql import SQL
+
+
+def play():
+    playsound("wow/wow-%s.wav" % randint(0,9))
 
 
 def raise_frame(frame: Frame):
@@ -130,6 +136,7 @@ class EnterParticipants(Frame):
             if int(self.exp_part) == int(self.ent_part):
                 sep.update_label()
                 raise_frame(sep)
+            play()
 
         # TODO Add error for duplicate email or empty input
         except Exception as e:
@@ -139,6 +146,7 @@ class EnterParticipants(Frame):
 
 class ImportParticipants(Frame):
 
+    # TODO Ask users to provide a .txt file in the specified format OR a sqlite database with the necessary specs
     def __init__(self, master):
         Frame.__init__(self, master)
         self.grid(sticky=NSEW)

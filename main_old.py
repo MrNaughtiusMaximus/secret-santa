@@ -35,6 +35,7 @@ def ask_participant():
     write_details(name, email, house, postcode)
 
 
+# TODO Add a config file which needs to be read to send emails - add the option to either place the file or put it through the GUI
 def send_emails():
     import smtplib
     username = "my@email.com"
