@@ -21,6 +21,7 @@ else:
 
 
 def write_details(name, email, house, postcode):
+    file_path = os.path.join(os.getcwd(), "participants.txt")
     file = open(file_path, "a+")
     file.write("\n" + name + ", " + email + ", " + house + ", " + postcode)
 
