@@ -130,6 +130,7 @@ class Navigation(Frame):
         raise_frame(s)
 
     def close(self):
+        db.close()
         exit()
 
 class WorkInProgress(Frame):
