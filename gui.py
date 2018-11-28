@@ -109,36 +109,41 @@ class EnterParticipants(Frame):
         self.err.grid(row=1, column=0, columnspan=3)
         Label(self, text="Enter the participant’s details:").grid(row=2, column=0, columnspan=3)
         Label(self, text="Name: ").grid(row=4, column=0, sticky=W, padx=5)
-        self.name = Entry(self)
-        self.name.grid(row=4, column=1, columnspan=2, sticky=NSEW, padx=5)
+        name = Entry(self)
+        name.grid(row=4, column=1, columnspan=2, sticky=NSEW, padx=5)
         Label(self, text="Email: ").grid(row=5, column=0, sticky=W, padx=5)
-        self.email = Entry(self)
-        self.email.grid(row=5, column=1, columnspan=2, sticky=NSEW, padx=5)
+        email = Entry(self)
+        email.grid(row=5, column=1, columnspan=2, sticky=NSEW, padx=5)
         Label(self, text="Address number: ").grid(row=6, column=0, sticky=W, padx=5)
-        self.house = Entry(self)
-        self.house.grid(row=6, column=1, sticky=NSEW, padx=5)
+        house = Entry(self)
+        house.grid(row=6, column=1, sticky=NSEW, padx=5)
         Label(self, text="Postcode: ").grid(row=7, column=0, sticky=W, padx=5)
-        self.post = Entry(self)
-        self.post.grid(row=7, column=1, sticky=NSEW, padx=5)
-        btn = Button(self, text="Continue", command=lambda: self.add_user(self.name, self.email, self.house, self.post), width=10)
-        btn.grid(row=8, column=2, sticky=E, padx=5, pady=5)
+        post = Entry(self)
+        post.grid(row=7, column=1, sticky=NSEW, padx=5)
+        Label(self, text="Wishlist URL (optional): ").grid(row=8, column=0, sticky=W, padx=5, columnspan=3)
+        wish = Entry(self)
+        wish.grid(row=8, column=1, sticky=NSEW, padx=5)
+        btn = Button(self, text="Continue",
+                     command=lambda: self.add_user(name, email, house, post, wish),
+                     width=10)
+        btn.grid(row=9, column=2, sticky=E, padx=5, pady=5)
 
     def update_bar_re_adding_user(self):
         self.err.configure(text="User added!")
         self.ent_part = self.ent_part + 1
         self.exp.configure(text="You have entered %s out of %s participants" % (self.ent_part, self.exp_part))
 
-    def clear_text(self):
-        self.name.delete(0, 'end')
-        self.email.delete(0, 'end')
-        self.house.delete(0, 'end')
-        self.post.delete(0, 'end')
-
-    def add_user(self, name, email, house, postcode):
+    def add_user(self, name, email, house, post, wish):
         try:
             print("Adding user " + name.get())
-            db.add_user(name.get(), email.get(), house.get(), postcode.get())
-            self.clear_text()
+            db.add_user(name.get(), email.get(), house.get(), post.get(), wish.get())
+
+            name.delete(0, 'end')
+            email.delete(0, 'end')
+            house.delete(0, 'end')
+            post.delete(0, 'end')
+            wish.delete(0, 'end')
+
             self.update_bar_re_adding_user()
             print("Expected participants are %s and entered ones are %s" % (self.exp_part, self.ent_part))
             if int(self.exp_part) == int(self.ent_part):
@@ -283,6 +288,7 @@ class SendEmailsPage(Frame):
             #
             file = open("sample-mails", "w")
             for k, v in pairs.items():
+                # TODO Add the wishlist if that user has one
                 msg = "\r\n".join([
                     "From: " + username,
                     "To:" + str(k[2]),
