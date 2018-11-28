@@ -244,8 +244,8 @@ class SendEmailsPage(Frame):
                     try:
                         del users[users.index(v)]
                     except Exception as e:
-                        # Whenever the gifter has already been removed from the list
-                        print("User %s has already been removed" % str(v))
+                        # Happens whenever the gifter has already been removed from the list
+                        print(e)
 
             # TODO Expain why
             if len(users) > 0:
@@ -263,37 +263,50 @@ class SendEmailsPage(Frame):
         self.part = len(db.fetch_participants())
         self.lbl.configure(text="You have now added %s participants" % str(self.part))
 
-    @staticmethod
-    def send_emails(pairs: dict):
+    # TODO Can make a new page object with email-related stuff
+    def send_emails(self, pairs: dict):
         import smtplib
+        self.lbl.configure(text="Sending emails...")
         print("Starting the emails sending sequence...")
-        username = "username"
-        password = "password"
+        username = "ten10secretsanta@gmail.com"
+        password = ""
 
-        print("Connecting to server...")
-        server = smtplib.SMTP("smtp.gmail.com", 587)
-        server.ehlo_or_helo_if_needed()
-        server.set_debuglevel(True)
-        print("Starting TLS...")
-        server.starttls()
-        print("Logging in...")
-        server.login(username, password)
-        msg = "\r\n".join([
-            "From: " + username,
-            "To:" + username,
-            "Subject: Testing Secret Santa",
-            "",
-            "Syche!"
-        ])
         try:
-            print("Sending email...")
-            server.sendmail(username, username, msg)
-            print("Email sent!")
-        except:
-            print("Couldn't send email!")
+            print("Connecting to server...")
+            # server = smtplib.SMTP("smtp.gmail.com", 587)
+            # server.ehlo_or_helo_if_needed()
+            # server.set_debuglevel(True)
+            # print("Starting TLS...")
+            # server.starttls()
+            # print("Logging in...")
+            # server.login(username, password)
+            #
+            file = open("sample-mails", "w")
+            for k, v in pairs.items():
+                msg = "\r\n".join([
+                    "From: " + username,
+                    "To:" + str(k[2]),
+                    "Subject: You have a new Secret Santa pair!",
+                    "",
+                    "Hi %s,\n\nYou are the Secret Santa for %s! Choose your gift by 15th December and send it off to %s, %s.\n\nGood luck!"
+                    % (str(k[2]), str(v[2]), str(v[3]), str(v[4]))
+                ])
+                file.write(msg + ",\n")
+                # try:
+                #     print("Sending email...")
+                    # server.sendmail(username, username, msg)
+                    # print("Email sent!")
+                # except:
+                #     print("Couldn't send email!")
 
-        server.quit()
+                # server.quit()
+            file.close()
+            self.lbl.configure(text="Emails sent!\nHope you enjoyed using the app!\nLeave feedback below or click 'Home' to send more emails")
+            self.btn.pack_forget()
 
+        except Exception as e:
+            print(e)
+            self.lbl.configure(text="Issue encountered while sending emails!")
 
 if __name__ == '__main__':
 

@@ -44,20 +44,3 @@ class SQL:
             print("Table created!")
         except Exception as e:
             print(e)
-
-
-if __name__ == '__main__':
-
-    # Creates a tmp db in the memory
-    # db = connect(':memory:')
-    # The file will be created if it doesn't already exist
-    db = SQL()
-    for i in (1, 2, 3, 4, 5, 6, 7, 8, 9, 10):
-        print("Adding users...")
-        db.add_user("Tester", "example" + str(i) + "@email.com", "25", "BN12 4NR")
-
-    users = db.fetch_participants()
-    for u in users:
-        print("User %s is %s" % (users.index(u), str(u)))
-
-    db.close()
