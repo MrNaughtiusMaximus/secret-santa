@@ -2,12 +2,14 @@ from tkinter import *
 from os import path, getcwd
 from playsound import playsound
 from random import randint
+from random import choice
 
 from sql import SQL
 
 
-def play():
-    playsound("wow/wow-%s.wav" % randint(0,9))
+# TODO Add for Windows only
+# def play():
+#     playsound("wow/wow-%s.wav" % randint(0,9))
 
 
 def raise_frame(frame: Frame):
@@ -35,24 +37,30 @@ class StartPage(Frame):
         r2.pack(anchor=W)
         r3 = Radiobutton(self, text="Leave feedback", variable=opt, value=3)
         r3.pack(anchor=W)
+        r4 = Radiobutton(self, text="Skip to randomising", variable=opt, value=4)
+        r4.pack(anchor=W)
         btn = Button(self, text="Continue", command=lambda: self.command(opt), width=10)
         btn.pack(side=BOTTOM, anchor=E, pady=5, padx=5)
 
     def command(self, i):
         print("option selected is " + str(i.get()))
-        if i.get() == 1:
-            raise_frame(hmp)
+        try:
+            if i.get() == 1:
+                raise_frame(hmp)
 
-        elif i.get() == 2:
-            raise_frame(ip)
+            elif i.get() == 2:
+                raise_frame(ip)
 
-        elif i.get() == 3:
-            # TODO Open feedback page and send email to myself
-            raise_frame(wip)
+            elif i.get() == 3:
+                # TODO Open feedback page and send email to myself
+                raise_frame(wip)
 
-        else:
-            print("The option is " + i.get())
-
+            # TODO Remove when no longer needed for testing purposes
+            elif i.get() == 4:
+                raise_frame(sep)
+        except Exception as e:
+            # TODO Add an error bar saying they need to select an option
+            print("The user did not select an option")
 
 class HowManyParticipants(Frame):
 
@@ -136,7 +144,7 @@ class EnterParticipants(Frame):
             if int(self.exp_part) == int(self.ent_part):
                 sep.update_label()
                 raise_frame(sep)
-            play()
+            # play()
 
         # TODO Add error for duplicate email or empty input
         except Exception as e:
@@ -192,6 +200,7 @@ class Navigation(Frame):
     def clear_db(self):
         print("DB dropped!")
         db.reset_records()
+        raise_frame(s)
 
 
 class WorkInProgress(Frame):
@@ -221,12 +230,69 @@ class SendEmailsPage(Frame):
         self.btn.pack_forget()
         self.lbl.configure(text="Randomising pairs...")
 
+        for u in db.fetch_participants():
+            # Fetching all participants
+            users = db.fetch_participants()
+            # Finding index of the current element
+            i = users.index(u)
+            del users[i]
+
+            # Checking if dict is empty, e.g. whether there are any pairs already assigned
+            if bool(self.pairs) is True:
+                # If there are, remove the giftee from the list so that they are not allocated two gifters
+                for k, v in self.pairs.items():
+                    try:
+                        del users[users.index(v)]
+                    except Exception as e:
+                        # Whenever the gifter has already been removed from the list
+                        print("User %s has already been removed" % str(v))
+
+            # TODO Expain why
+            if len(users) > 0:
+                self.pairs[u] = choice(users)
+
+        # TODO Remove when app is finished
+        for k, v in self.pairs.items():
+            print("Key %s has value %s" % (str(k), str(v)))
+
+        self.lbl.configure(text="Pairs have been assigned!\nDo you want to send out emails?")
+        self.btn.configure(text="Send emails", command=lambda: self.send_emails(self.pairs))
+        self.btn.pack(anchor=SE, padx=5, pady=5)
+
     def update_label(self):
         self.part = len(db.fetch_participants())
         self.lbl.configure(text="You have now added %s participants" % str(self.part))
 
-    def update_btn(self):
-        self.btn.configure(text="")
+    @staticmethod
+    def send_emails(pairs: dict):
+        import smtplib
+        print("Starting the emails sending sequence...")
+        username = "username"
+        password = "password"
+
+        print("Connecting to server...")
+        server = smtplib.SMTP("smtp.gmail.com", 587)
+        server.ehlo_or_helo_if_needed()
+        server.set_debuglevel(True)
+        print("Starting TLS...")
+        server.starttls()
+        print("Logging in...")
+        server.login(username, password)
+        msg = "\r\n".join([
+            "From: " + username,
+            "To:" + username,
+            "Subject: Testing Secret Santa",
+            "",
+            "Syche!"
+        ])
+        try:
+            print("Sending email...")
+            server.sendmail(username, username, msg)
+            print("Email sent!")
+        except:
+            print("Couldn't send email!")
+
+        server.quit()
 
 
 if __name__ == '__main__':
