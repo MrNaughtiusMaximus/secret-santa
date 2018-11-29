@@ -2,12 +2,14 @@ from tkinter import *
 from os import path, getcwd
 from playsound import playsound
 from random import randint
+from random import choice
 
 from sql import SQL
 
 
-def play():
-    playsound("wow/wow-%s.wav" % randint(0,9))
+# TODO Add for Windows only
+# def play():
+#     playsound("wow/wow-%s.wav" % randint(0,9))
 
 
 def raise_frame(frame: Frame):
@@ -35,24 +37,30 @@ class StartPage(Frame):
         r2.pack(anchor=W)
         r3 = Radiobutton(self, text="Leave feedback", variable=opt, value=3)
         r3.pack(anchor=W)
+        r4 = Radiobutton(self, text="Skip to randomising", variable=opt, value=4)
+        r4.pack(anchor=W)
         btn = Button(self, text="Continue", command=lambda: self.command(opt), width=10)
         btn.pack(side=BOTTOM, anchor=E, pady=5, padx=5)
 
     def command(self, i):
         print("option selected is " + str(i.get()))
-        if i.get() == 1:
-            raise_frame(hmp)
+        try:
+            if i.get() == 1:
+                raise_frame(hmp)
 
-        elif i.get() == 2:
-            raise_frame(ip)
+            elif i.get() == 2:
+                raise_frame(ip)
 
-        elif i.get() == 3:
-            # TODO Open feedback page and send email to myself
-            raise_frame(wip)
+            elif i.get() == 3:
+                # TODO Open feedback page and send email to myself
+                raise_frame(wip)
 
-        else:
-            print("The option is " + i.get())
-
+            # TODO Remove when no longer needed for testing purposes
+            elif i.get() == 4:
+                raise_frame(sep)
+        except Exception as e:
+            # TODO Add an error bar saying they need to select an option
+            print("The user did not select an option")
 
 class HowManyParticipants(Frame):
 
@@ -101,42 +109,47 @@ class EnterParticipants(Frame):
         self.err.grid(row=1, column=0, columnspan=3)
         Label(self, text="Enter the participant’s details:").grid(row=2, column=0, columnspan=3)
         Label(self, text="Name: ").grid(row=4, column=0, sticky=W, padx=5)
-        self.name = Entry(self)
-        self.name.grid(row=4, column=1, columnspan=2, sticky=NSEW, padx=5)
+        name = Entry(self)
+        name.grid(row=4, column=1, columnspan=2, sticky=NSEW, padx=5)
         Label(self, text="Email: ").grid(row=5, column=0, sticky=W, padx=5)
-        self.email = Entry(self)
-        self.email.grid(row=5, column=1, columnspan=2, sticky=NSEW, padx=5)
+        email = Entry(self)
+        email.grid(row=5, column=1, columnspan=2, sticky=NSEW, padx=5)
         Label(self, text="Address number: ").grid(row=6, column=0, sticky=W, padx=5)
-        self.house = Entry(self)
-        self.house.grid(row=6, column=1, sticky=NSEW, padx=5)
+        house = Entry(self)
+        house.grid(row=6, column=1, sticky=NSEW, padx=5)
         Label(self, text="Postcode: ").grid(row=7, column=0, sticky=W, padx=5)
-        self.post = Entry(self)
-        self.post.grid(row=7, column=1, sticky=NSEW, padx=5)
-        btn = Button(self, text="Continue", command=lambda: self.add_user(self.name, self.email, self.house, self.post), width=10)
-        btn.grid(row=8, column=2, sticky=E, padx=5, pady=5)
+        post = Entry(self)
+        post.grid(row=7, column=1, sticky=NSEW, padx=5)
+        Label(self, text="Wishlist URL (optional): ").grid(row=8, column=0, sticky=W, padx=5, columnspan=3)
+        wish = Entry(self)
+        wish.grid(row=8, column=1, sticky=NSEW, padx=5)
+        btn = Button(self, text="Continue",
+                     command=lambda: self.add_user(name, email, house, post, wish),
+                     width=10)
+        btn.grid(row=9, column=2, sticky=E, padx=5, pady=5)
 
     def update_bar_re_adding_user(self):
         self.err.configure(text="User added!")
         self.ent_part = self.ent_part + 1
         self.exp.configure(text="You have entered %s out of %s participants" % (self.ent_part, self.exp_part))
 
-    def clear_text(self):
-        self.name.delete(0, 'end')
-        self.email.delete(0, 'end')
-        self.house.delete(0, 'end')
-        self.post.delete(0, 'end')
-
-    def add_user(self, name, email, house, postcode):
+    def add_user(self, name, email, house, post, wish):
         try:
             print("Adding user " + name.get())
-            db.add_user(name.get(), email.get(), house.get(), postcode.get())
-            self.clear_text()
+            db.add_user(name.get(), email.get(), house.get(), post.get(), wish.get())
+
+            name.delete(0, 'end')
+            email.delete(0, 'end')
+            house.delete(0, 'end')
+            post.delete(0, 'end')
+            wish.delete(0, 'end')
+
             self.update_bar_re_adding_user()
             print("Expected participants are %s and entered ones are %s" % (self.exp_part, self.ent_part))
             if int(self.exp_part) == int(self.ent_part):
                 sep.update_label()
                 raise_frame(sep)
-            play()
+            # play()
 
         # TODO Add error for duplicate email or empty input
         except Exception as e:
@@ -192,6 +205,7 @@ class Navigation(Frame):
     def clear_db(self):
         print("DB dropped!")
         db.reset_records()
+        raise_frame(s)
 
 
 class WorkInProgress(Frame):
@@ -221,13 +235,84 @@ class SendEmailsPage(Frame):
         self.btn.pack_forget()
         self.lbl.configure(text="Randomising pairs...")
 
+        for u in db.fetch_participants():
+            # Fetching all participants
+            users = db.fetch_participants()
+            # Finding index of the current element
+            i = users.index(u)
+            del users[i]
+
+            # Checking if dict is empty, e.g. whether there are any pairs already assigned
+            if bool(self.pairs) is True:
+                # If there are, remove the giftee from the list so that they are not allocated two gifters
+                for k, v in self.pairs.items():
+                    try:
+                        del users[users.index(v)]
+                    except Exception as e:
+                        # Happens whenever the gifter has already been removed from the list
+                        print(e)
+
+            # TODO Expain why
+            if len(users) > 0:
+                self.pairs[u] = choice(users)
+
+        # TODO Remove when app is finished
+        for k, v in self.pairs.items():
+            print("Key %s has value %s" % (str(k), str(v)))
+
+        self.lbl.configure(text="Pairs have been assigned!\nDo you want to send out emails?")
+        self.btn.configure(text="Send emails", command=lambda: self.send_emails(self.pairs))
+        self.btn.pack(anchor=SE, padx=5, pady=5)
+
     def update_label(self):
         self.part = len(db.fetch_participants())
         self.lbl.configure(text="You have now added %s participants" % str(self.part))
 
-    def update_btn(self):
-        self.btn.configure(text="")
+    # TODO Can make a new page object with email-related stuff
+    def send_emails(self, pairs: dict):
+        import smtplib
+        self.lbl.configure(text="Sending emails...")
+        print("Starting the emails sending sequence...")
+        username = "ten10secretsanta@gmail.com"
+        password = ""
 
+        try:
+            print("Connecting to server...")
+            # server = smtplib.SMTP("smtp.gmail.com", 587)
+            # server.ehlo_or_helo_if_needed()
+            # server.set_debuglevel(True)
+            # print("Starting TLS...")
+            # server.starttls()
+            # print("Logging in...")
+            # server.login(username, password)
+            #
+            file = open("sample-mails", "w")
+            for k, v in pairs.items():
+                # TODO Add the wishlist if that user has one
+                msg = "\r\n".join([
+                    "From: " + username,
+                    "To:" + str(k[2]),
+                    "Subject: You have a new Secret Santa pair!",
+                    "",
+                    "Hi %s,\n\nYou are the Secret Santa for %s! Choose your gift by 15th December and send it off to %s, %s.\n\nGood luck!"
+                    % (str(k[2]), str(v[2]), str(v[3]), str(v[4]))
+                ])
+                file.write(msg + ",\n")
+                # try:
+                #     print("Sending email...")
+                    # server.sendmail(username, username, msg)
+                    # print("Email sent!")
+                # except:
+                #     print("Couldn't send email!")
+
+                # server.quit()
+            file.close()
+            self.lbl.configure(text="Emails sent!\nHope you enjoyed using the app!\nLeave feedback below or click 'Home' to send more emails")
+            self.btn.pack_forget()
+
+        except Exception as e:
+            print(e)
+            self.lbl.configure(text="Issue encountered while sending emails!")
 
 if __name__ == '__main__':
 
