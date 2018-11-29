@@ -73,15 +73,17 @@ class HowManyParticipants(Frame):
     def __init__(self, master):
         Frame.__init__(self, master)
         self.grid(sticky=NSEW, padx=5, pady=5)
-        Label(self, text="How many participants do you want to enter?").grid(row=0, sticky=NS)
-        Label(self, text="Enter number here:").grid(row=1, column=0, sticky=W)
+        Label(self, text="How many participants do you want to enter?").pack(fill=X)
         # TODO Check if file already exists and, if it does, ask whether to use or delete
         self.lbl = Label(self)
-        self.lbl.grid(row=2, column=0, sticky=W)
-        p = Entry(self)
-        p.grid(row=1, column=1, sticky=E)
-        btn = Button(self, text="Continue", command=lambda: self.command(p), width=10)
-        btn.grid(row=3, column=1, sticky=SE)
+        self.lbl.pack(fill=BOTH, expand=TRUE)
+        f = Frame(self)
+        f.pack(side=BOTTOM, fill=X, expand=TRUE, anchor=SW)
+        Label(f, text="Enter number here:").pack(fill=X, side=LEFT, anchor=W)
+        p = Entry(f)
+        p.pack(fill=X, side=LEFT, expand=TRUE, anchor=W)
+        btn = Button(f, text="Continue", command=lambda: self.command(p), width=10)
+        btn.pack(fill=X, side=RIGHT, anchor=SE)
 
     def command(self, i):
         print("The user inputted %s" % str(i.get()))
@@ -101,7 +103,7 @@ class HowManyParticipants(Frame):
 class EnterParticipants(Frame):
     def __init__(self, master):
         Frame.__init__(self, master)
-        self.grid(sticky=NSEW)
+        self.grid(sticky=NSEW, padx=5, pady=5)
 
         # TODO Works, but is clicked whenever the app starts - resolve as part of post-MVP
         # self.bind('<Return>', self.add_user("", "", "", ""))
@@ -114,25 +116,25 @@ class EnterParticipants(Frame):
         self.err = Label(self)
         self.err.grid(row=1, column=0, columnspan=3)
         Label(self, text="Enter the participant’s details:").grid(row=2, column=0, columnspan=3)
-        Label(self, text="Name: ").grid(row=4, column=0, sticky=W, padx=5)
+        Label(self, text="Name: ").grid(row=4, column=0, sticky=W)
         name = Entry(self)
-        name.grid(row=4, column=1, columnspan=2, sticky=NSEW, padx=5)
-        Label(self, text="Email: ").grid(row=5, column=0, sticky=W, padx=5)
+        name.grid(row=4, column=1, columnspan=2, sticky=NSEW)
+        Label(self, text="Email: ").grid(row=5, column=0, sticky=W)
         email = Entry(self)
-        email.grid(row=5, column=1, columnspan=2, sticky=NSEW, padx=5)
-        Label(self, text="Address number: ").grid(row=6, column=0, sticky=W, padx=5)
+        email.grid(row=5, column=1, columnspan=2, sticky=NSEW)
+        Label(self, text="Address number: ").grid(row=6, column=0, sticky=W)
         house = Entry(self)
-        house.grid(row=6, column=1, sticky=NSEW, padx=5)
-        Label(self, text="Postcode: ").grid(row=7, column=0, sticky=W, padx=5)
+        house.grid(row=6, column=1, sticky=NSEW)
+        Label(self, text="Postcode: ").grid(row=7, column=0, sticky=W)
         post = Entry(self)
-        post.grid(row=7, column=1, sticky=NSEW, padx=5)
-        Label(self, text="Wishlist URL (optional): ").grid(row=8, column=0, sticky=W, padx=5, columnspan=3)
+        post.grid(row=7, column=1, sticky=NSEW)
+        Label(self, text="Wishlist URL (optional): ").grid(row=8, column=0, sticky=W, columnspan=3)
         wish = Entry(self)
-        wish.grid(row=8, column=1, sticky=NSEW, padx=5)
+        wish.grid(row=8, column=1, sticky=NSEW)
         btn = Button(self, text="Continue",
                      command=lambda: self.add_user(name, email, house, post, wish),
                      width=10)
-        btn.grid(row=9, column=2, sticky=E, padx=5, pady=5)
+        btn.grid(row=9, column=2, sticky=E)
 
     def update_bar_re_adding_user(self):
         self.err.configure(text="User added!")
