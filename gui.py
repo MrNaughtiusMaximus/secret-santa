@@ -224,6 +224,8 @@ class SendEmailsPage(Frame):
         self.part = len(db.fetch_participants())
         self.lbl = Label(self)
         self.lbl.pack(fill=BOTH, expand=TRUE)
+        self.lb1 = Listbox(self)
+        self.lb1.pack(fill=BOTH, expand=TRUE)
         self.update_label()
         self.pairs = {}
         self.btn = Button(self, text="Pair participants", command=lambda: self.randomise_santas())
@@ -233,6 +235,7 @@ class SendEmailsPage(Frame):
         # looping animation while you wait saying "Pairing participants..."
         # Can be restored by just using self.btn.pack(args*)
         self.btn.pack_forget()
+        self.lb1.pack_forget()
         self.lbl.configure(text="Randomising pairs...")
 
         for u in db.fetch_participants():
@@ -265,8 +268,11 @@ class SendEmailsPage(Frame):
         self.btn.pack(anchor=SE, padx=5, pady=5)
 
     def update_label(self):
-        self.part = len(db.fetch_participants())
+        users = db.fetch_participants()
+        self.part = len(users)
         self.lbl.configure(text="You have now added %s participants" % str(self.part))
+        for u in users:
+            self.lb1.insert(users.index(u), "%s, %s" % (u[1], u[2]))
 
     # TODO Can make a new page object with email-related stuff
     def send_emails(self, pairs: dict):
@@ -275,44 +281,54 @@ class SendEmailsPage(Frame):
         print("Starting the emails sending sequence...")
         username = "ten10secretsanta@gmail.com"
         password = ""
-
+        i = 0
         try:
             print("Connecting to server...")
             # server = smtplib.SMTP("smtp.gmail.com", 587)
-            # server.ehlo_or_helo_if_needed()
             # server.set_debuglevel(True)
             # print("Starting TLS...")
             # server.starttls()
             # print("Logging in...")
             # server.login(username, password)
-            #
+
+            # TODO Remove file stuff after testing is finished
             file = open("sample-mails", "w")
             for k, v in pairs.items():
                 # TODO Add the wishlist if that user has one
                 msg = "\r\n".join([
                     "From: " + username,
-                    "To:" + str(k[2]),
+                    "To: %s" % str(v[2]),
                     "Subject: You have a new Secret Santa pair!",
                     "",
-                    "Hi %s,\n\nYou are the Secret Santa for %s! Choose your gift by 15th December and send it off to %s, %s.\n\nGood luck!"
-                    % (str(k[2]), str(v[2]), str(v[3]), str(v[4]))
+                    """Hi %s,
+                    
+                    You are the Secret Santa for %s! 
+                    Choose your gift by 15th December and send it off to %s, %s.
+                    
+                    Good luck!"""
+                    % (str(k[1]), str(v[1]), str(v[3]), str(v[4]))
                 ])
-                file.write(msg + ",\n")
-                # try:
-                #     print("Sending email...")
-                    # server.sendmail(username, username, msg)
-                    # print("Email sent!")
-                # except:
-                #     print("Couldn't send email!")
+                # file.write(msg + ",\n")
+                try:
+                    print("Sending email...")
+                    # server.sendmail(username, "y_angelov@hotmail.com", msg)
+                    i = i + 1
+                    self.lbl.configure(text="%s emails sent out of %s..." % (i, len(pairs)))
+                    print("Email sent!")
+                except:
+                    print("Couldn't send email!")
 
-                # server.quit()
+            # server.quit()
             file.close()
-            self.lbl.configure(text="Emails sent!\nHope you enjoyed using the app!\nLeave feedback below or click 'Home' to send more emails")
+            self.lbl.configure(text="""Emails sent!
+            Hope you enjoyed using the app!
+            Leave feedback below or click 'Home' to send more emails""")
             self.btn.pack_forget()
 
         except Exception as e:
             print(e)
             self.lbl.configure(text="Issue encountered while sending emails!")
+
 
 if __name__ == '__main__':
 
