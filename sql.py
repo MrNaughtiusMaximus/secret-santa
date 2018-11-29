@@ -20,6 +20,12 @@ class SQL:
             self.db.rollback()
             return e
 
+    def fetch_participants_from_first_table(self):
+        self.cursor.execute("""SELECT name FROM sqlite_master WHERE type = 'table'""")
+        tb = self.cursor.fetchall()
+        self.cursor.execute("""SELECT * FROM %s""" % tb[0])
+        return self.cursor.fetchall()
+
     def fetch_participants(self):
         self.cursor.execute("""SELECT * FROM participants""")
         return self.cursor.fetchall()

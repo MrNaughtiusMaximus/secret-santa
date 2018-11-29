@@ -12,6 +12,12 @@ from sql import SQL
 #     playsound("wow/wow-%s.wav" % randint(0,9))
 
 
+def create_listbox(master: Tk):
+    ls = Listbox(master)
+    ls.pack(fill=BOTH, expand=TRUE)
+    return ls
+
+
 def raise_frame(frame: Frame):
     frame.tkraise()
 
@@ -162,23 +168,52 @@ class ImportParticipants(Frame):
     # TODO Ask users to provide a .txt file in the specified format OR a sqlite database with the necessary specs
     def __init__(self, master):
         Frame.__init__(self, master)
-        self.grid(sticky=NSEW)
-        Label(self, text="To import participants, please put the file in the same directory as the app.")\
-            .pack(fill=X)
-        lbl = Label(self, text="")
-        lbl.pack(fill=X, expand=TRUE)
-        Label(self, text="Enter the file name: ").pack(side=LEFT, fill=BOTH, expand=TRUE)
-        e = Entry(self)
-        e.pack(side=LEFT, pady=5, padx=5, expand=TRUE, fill=X)
-        btn = Button(self, text="Continue", command=lambda: self.command(e, lbl), width=10)
-        btn.pack(side=BOTTOM, anchor=E, pady=5, padx=5)
+        self.grid(sticky=NSEW, padx=5, pady=5)
+        lbl = Label(self, text="To import participants successfully, use the following format:\n\n"
+              ".csv or .txt files: name, email, house number or name, postcode (list new users on new lines)\n"
+              "Example: John Doe, john@email.com, 25, BN10 3PF\n\n"
+              "SQLite .db files: create a table with columns in same order as above\n"
+              "")
+        lbl.pack(side=TOP, fill=X)
+        lbl2 = Label(self)
+        lbl2.pack(side=TOP, fill=X, expand=TRUE)
+        lb1 = Listbox(self)
+        f = Frame(self)
+        f.pack(side=BOTTOM, fill=X, expand=TRUE, anchor=SW)
+        Label(f, text="Enter the file name: ").pack(side=LEFT, anchor=W, fill=X)
+        e = Entry(f)
+        e.pack(side=LEFT, anchor=W, padx=5, fill=X, expand=TRUE)
+        btn = Button(f, text="Import", command=lambda: self.imp(e, lbl, lbl2, lb1), width=10)
+        btn.pack(side=RIGHT, anchor=SE)
 
-    def command(self, i, a):
+    def imp(self, i, a, a2, lb):
         file_path = path.join(getcwd(), str(i.get()))
         if not path.exists(file_path):
-            a.configure(text="File cannot be found!\nImport the file and try again.")
+            a2.configure(text="File cannot be found!\nImport the file and try again.")
         else:
-            a.configure(text="File found!")
+            #TODO Add check whether filed ends in .csv or .txt and extract data accordingly
+            file = open(file_path, "r")
+            users = []
+            # Getting all users
+            for l in file:
+                users.append(l)
+                print("User %s found" % l)
+
+            # Sanitizing the input
+            pattern = '[a-zA-Z@\.0-9 ]'
+            san_users = []
+            lb.delete(0, END)
+            for u in users:
+                print("Sanitizing user %s" % u)
+                ls = u.split(",")
+                usr = []
+                for each in ls:
+                    usr.append(''.join(re.findall(pattern, each)))
+                print("Adding sanitized user %s" % usr)
+                lb.insert(users.index(u), "%s, %s" % (usr[1], usr[2]))
+                san_users.append(usr)
+            lb.pack(side=TOP, fill=BOTH, expand=TRUE)
+            a.configure(text="The following participants have been found:")
 
 
 class Navigation(Frame):
@@ -193,7 +228,7 @@ class Navigation(Frame):
         btn2 = Button(self, text="Reset DB", command=lambda: self.clear_db(), width=10)
         btn2.pack(side=LEFT, anchor=E, pady=5, padx=5)
         # TODO Link below with GitHub release version
-        Label(self, text="v0.2 Yordan Angelov Copyright 2018").pack(side=RIGHT, padx=5)
+        Label(self, text="v0.3 Yordan Angelov Copyright 2018").pack(side=RIGHT, padx=5)
 
     def home(self):
         raise_frame(s)
@@ -218,18 +253,18 @@ class WorkInProgress(Frame):
 
 class SendEmailsPage(Frame):
 
+    # TODO Add scrollbar if needed
     def __init__(self, master):
         Frame.__init__(self, master)
-        self.grid(sticky=NSEW)
+        self.grid(sticky=NSEW, padx=5, pady=5)
         self.part = len(db.fetch_participants())
         self.lbl = Label(self)
         self.lbl.pack(fill=BOTH, expand=TRUE)
-        self.lb1 = Listbox(self)
-        self.lb1.pack(fill=BOTH, expand=TRUE)
+        self.lb1 = create_listbox(self)
         self.update_label()
         self.pairs = {}
         self.btn = Button(self, text="Pair participants", command=lambda: self.randomise_santas())
-        self.btn.pack(anchor=SE, padx=5, pady=5)
+        self.btn.pack(anchor=SE)
 
     def randomise_santas(self):
         # looping animation while you wait saying "Pairing participants..."
@@ -270,7 +305,8 @@ class SendEmailsPage(Frame):
     def update_label(self):
         users = db.fetch_participants()
         self.part = len(users)
-        self.lbl.configure(text="You have now added %s participants" % str(self.part))
+        self.lbl.configure(text="There are %s participants saved" % str(self.part))
+        self.lb1.delete(0, END)
         for u in users:
             self.lb1.insert(users.index(u), "%s, %s" % (u[1], u[2]))
 
@@ -300,15 +336,13 @@ class SendEmailsPage(Frame):
                     "To: %s" % str(v[2]),
                     "Subject: You have a new Secret Santa pair!",
                     "",
-                    """Hi %s,
-                    
-                    You are the Secret Santa for %s! 
-                    Choose your gift by 15th December and send it off to %s, %s.
-                    
-                    Good luck!"""
+                    "Hi %s,\n\n"
+                    "You are the Secret Santa for %s!\n"
+                    "Choose your gift by 15th December and send it off to %s, %s.\n\n"
+                    "Good luck!"
                     % (str(k[1]), str(v[1]), str(v[3]), str(v[4]))
                 ])
-                # file.write(msg + ",\n")
+                file.write(msg + ",\n")
                 try:
                     print("Sending email...")
                     # server.sendmail(username, "y_angelov@hotmail.com", msg)
