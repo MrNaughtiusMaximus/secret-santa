@@ -10,7 +10,6 @@ from platform import platform
 from sql import SQL, IntegrityError
 
 
-# TODO Toggle sound on/off
 def play(scenario):
     if "Windows" in platform():
         if scenario == "err":
@@ -21,13 +20,6 @@ def play(scenario):
 
 def raise_frame(fr: Frame):
     fr.tkraise()
-
-# TODO Move main code to App and just start it once in the __init__ = "__main__"
-# class App():
-#     if __name__ == '__main__':
-#
-#     def start(self):
-#         self.root.mainloop()
 
 
 class StartPage(Frame):
@@ -78,7 +70,6 @@ class HowManyParticipants(Frame):
         Frame.__init__(self, master)
         self.grid(sticky=NSEW)
         Label(self, text="How many participants do you want to enter?").pack(fill=X, expand=TRUE)
-        # TODO Check if file already exists and, if it does, ask whether to use or delete
         self.lbl = Label(self, fg="red")
         self.lbl.pack(fill=BOTH, expand=TRUE)
         f = Frame(self)
@@ -206,8 +197,6 @@ class ImportParticipants(Frame):
             a.configure(text="File cannot be found!\nImport the file and try again.", fg="red")
             play("err")
         else:
-            # TODO Add check whether filed ends in .csv or .txt and extract data accordingly
-            # TODO Add error handling
             # Getting all users
             file = open(file_path, "r")
             users = []
@@ -238,7 +227,6 @@ class ImportParticipants(Frame):
                         a.configure(text="File cannot be found!\nImport the file and try again.")
                         print("Error encountered! User does not have the expected values.")
                     san_users.append(usr)
-                # TODO Give them option to retry
                 sep.update_label()
                 raise_frame(sep)
 
@@ -253,7 +241,6 @@ class Navigation(Frame):
         btn2 = Button(self, text="Reset DB", command=lambda: self.clear_db(), width=10)
         for i in (btn, btn1, btn2):
             i.pack(side=LEFT, anchor=W, pady=5, padx=5)
-        # TODO Link below with GitHub release version
         Label(self, text="v1.0 Yordan Angelov Copyright 2018").pack(side=RIGHT, padx=5)
 
     @staticmethod
@@ -297,7 +284,6 @@ class LeaveFeedback(Frame):
 
 class SendEmailsPage(Frame):
 
-    # TODO Add scrollbar if needed
     def __init__(self, master):
         Frame.__init__(self, master)
         self.grid(sticky=NSEW, padx=5, pady=5)
@@ -349,7 +335,6 @@ class SendEmailsPage(Frame):
         for u in users:
             self.lb1.insert(users.index(u), "%s, %s" % (u[1], u[2]))
 
-    # TODO Can make a new page object with email-related stuff
     def send_emails(self, pairs: dict):
         self.lbl.configure(text="Sending emails...")
         print("Starting the emails sending sequence...")
