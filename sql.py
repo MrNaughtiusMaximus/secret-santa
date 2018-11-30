@@ -1,4 +1,4 @@
-from sqlite3 import *
+from sqlite3 import connect, IntegrityError
 
 
 class SQL:
@@ -16,10 +16,14 @@ class SQL:
                                 (name, email, house, postcode, wishlist))
             self.db.commit()
             print("Added user '%s, %s, %s, %s, %s'" % (name, email, house, postcode, wishlist))
+        except IntegrityError as e:
+            print("User is attempting to use an email twice")
+            self.db.rollback()
+            raise e
         except Exception as e:
             print("Encountered following error: " + str(e))
             self.db.rollback()
-            return e
+            raise e
 
     def fetch_participants_from_first_table(self):
         self.cursor.execute("""SELECT name FROM sqlite_master WHERE type = 'table'""")
@@ -54,18 +58,5 @@ class SQL:
             """)
             self.db.commit()
             print("Table created!")
-        except Exception as e:
-            print(e)
-
-    # TODO Finish
-    def create_nice_list(self, name):
-        try:
-            print("Creating nice list table %s" % name)
-            self.cursor.execute("""
-            CREATE TABLE %s(id INTEGER PRIMARY KEY, email TEXT unique)
-            """ % name)
-            self.db.commit()
-            print("Table created!")
-
         except Exception as e:
             print(e)

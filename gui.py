@@ -7,12 +7,16 @@ from webbrowser import open_new
 from smtplib import SMTP
 from platform import platform
 
-from sql import SQL
+from sql import SQL, IntegrityError
 
 
-def play():
+# TODO Toggle sound on/off
+def play(scenario):
     if "Windows" in platform():
-        playsound("wow/wow-%s.wav" % randint(0, 9))
+        if scenario == "err":
+            playsound("wow/err-%s.wav" % randint(1, 4))
+        if scenario == "wow":
+            playsound("wow/wow-%s.wav" % randint(1, 10))
 
 
 def raise_frame(fr: Frame):
@@ -33,6 +37,8 @@ class StartPage(Frame):
         self.grid(sticky=NSEW)
         Label(self, text="Welcome to the Yordan's Secret Santa app!\nWhat do you want to do today?")\
             .pack(fill=BOTH, expand=TRUE)
+        self.err = Label(self, fg="red")
+        self.err.pack(fill=BOTH, expand=TRUE)
         opt = IntVar()
         r1 = Radiobutton(self, text="Add participants manually")
         r2 = Radiobutton(self, text="Import participants")
@@ -44,9 +50,7 @@ class StartPage(Frame):
 
         Button(self, text="Continue", command=lambda: self.command(opt), width=10).pack(anchor=SE)
 
-    @staticmethod
-    def command(i):
-        print("option selected is " + str(i.get()))
+    def command(self, i):
         try:
             if i.get() == 1:
                 raise_frame(hmp)
@@ -57,10 +61,15 @@ class StartPage(Frame):
             elif i.get() == 3:
                 raise_frame(lf)
 
+            else:
+                self.err.configure(text="Select an option to proceed")
+                self.err.pack(fill=BOTH, expand=TRUE)
+
         except Exception as e:
-            # TODO Add an error bar saying they need to select an option
             print("Got the error: %s" % str(e))
+            self.err.configure(text="Select an option to proceed")
             print("The user did not select an option")
+            play("err")
 
 
 class HowManyParticipants(Frame):
@@ -70,7 +79,7 @@ class HowManyParticipants(Frame):
         self.grid(sticky=NSEW)
         Label(self, text="How many participants do you want to enter?").pack(fill=X, expand=TRUE)
         # TODO Check if file already exists and, if it does, ask whether to use or delete
-        self.lbl = Label(self)
+        self.lbl = Label(self, fg="red")
         self.lbl.pack(fill=BOTH, expand=TRUE)
         f = Frame(self)
         f.pack(side=BOTTOM, fill=X, expand=TRUE, anchor=S)
@@ -90,7 +99,8 @@ class HowManyParticipants(Frame):
                 raise_frame(ep)
         except Exception as e:
             print("Got the error: %s" % str(e))
-            self.lbl.configure(text="Please enter a number!")
+            self.lbl.configure(text="Enter a number to proceed")
+            play("err")
 
 
 class EnterParticipants(Frame):
@@ -127,63 +137,77 @@ class EnterParticipants(Frame):
         btn.pack(side=BOTTOM, expand=TRUE, anchor=SE)
 
     def update_bar_re_adding_user(self):
-        self.err.configure(text="User added!")
+        self.err.configure(text="User added!", fg="black")
         self.ent_part = self.ent_part + 1
         self.exp.configure(text="You have entered %s out of %s participants" % (self.ent_part, self.exp_part))
 
-    # TODO Check error handling
     def add_user(self, name, email, house, post, wish):
         try:
-            print("Adding user " + name.get())
-            db.add_user(name.get(), email.get(), house.get(), post.get(), wish.get())
+            for i in (name, email, house, post):
+                if len(i.get()) == 0:
+                    raise AttributeError("required field is empty")
 
+            db.add_user(name.get(), email.get(), house.get(), post.get(), wish.get())
             for i in (name, email, house, post, wish):
                 i.delete(0, 'end')
-
             self.update_bar_re_adding_user()
-            print("Expected participants are %s and entered ones are %s" % (self.exp_part, self.ent_part))
             if int(self.exp_part) == int(self.ent_part):
                 sep.update_label()
                 raise_frame(sep)
-            play()
+            play("wow")
 
-        # TODO Add error for duplicate email or empty input
+        except IntegrityError as e:
+            print("Got this error while adding users to DB: " + str(e))
+            self.err.configure(text="Email is already in use", fg="red")
+            play("err")
+
+        except AttributeError as e:
+            print("Got this error while adding users to DB: " + str(e))
+            self.err.configure(text="Enter name, email and posting address to proceed", fg="red")
+            play("err")
+
         except Exception as e:
-            print("The error is: " + str(e))
-            self.err.configure(text="There was an error while adding the user. Try again!")
+            print("Got this error while adding users to DB: " + str(e))
+            self.err.configure(text="An unexpected issue occurred while adding the user", fg="red")
+            play("err")
 
 
 class ImportParticipants(Frame):
 
-    # TODO Ask users to provide a .txt file in the specified format OR a sqlite database with the necessary specs
     def __init__(self, master):
         Frame.__init__(self, master)
         self.grid(sticky=NSEW)
-        lbl = Label(self, text="To import participants successfully, use the following format:\n\n"
-                               ".csv or .txt files: name, email, house number or name, postcode\n"
-                               "Example: John Doe, john@email.com, 25, BN10 3PF\n"
-                               "See example.txt if unsure.\n\n"
-                               "SQLite .db files: create a table with columns in same order as above\n\n"
-                               "Note: unique email addresses are necessary for the app to work")
-        lbl.pack(side=TOP, fill=X, expand=TRUE)
+        Label(self, text="To import participants successfully, use the following format:\n\n"
+                         ".csv or .txt files: name, email, house number or name, postcode\n"
+                         "Note: avoid including commas at the end of lines for best performance\n\n"
+                         "SQLite .db files: create a table with columns in same order as above\n"
+                         "Note: unique email addresses are necessary for the app to work")\
+            .pack(side=TOP, fill=X)
+        example = Label(self, text="See example.txt", fg="blue", cursor="hand2")
+        example.pack(side=TOP, fill=X)
+        example.bind("<Button-1>", self.see_example)
         lbl2 = Label(self)
         lbl2.pack(side=TOP, fill=X, expand=TRUE)
         f = Frame(self)
         f.pack(side=BOTTOM, fill=X, expand=TRUE, anchor=S)
-        self.lbl3 = Label(f, text="Enter the file name: ")
-        self.lbl3.pack(side=LEFT, anchor=W, fill=X)
+        Label(f, text="Enter the file name: ").pack(side=LEFT, anchor=W, fill=X)
         self.e = Entry(f)
         self.e.pack(side=LEFT, anchor=W, padx=5, fill=X, expand=TRUE)
         self.btn = Button(f, text="Import", command=lambda: self.imp(lbl2), width=10)
         self.btn.pack(anchor=E)
 
+    @staticmethod
+    def see_example(event):
+        open_new(path.join(getcwd(), "example.txt"))
+
     def imp(self, a):
         file_path = path.join(getcwd(), str(self.e.get()))
         if not path.exists(file_path):
-            a.configure(text="File cannot be found!\nImport the file and try again.")
+            a.configure(text="File cannot be found!\nImport the file and try again.", fg="red")
+            play("err")
         else:
             # TODO Add check whether filed ends in .csv or .txt and extract data accordingly
-            # TODO Add error handling try/except
+            # TODO Add error handling
             # Getting all users
             file = open(file_path, "r")
             users = []
@@ -191,27 +215,32 @@ class ImportParticipants(Frame):
                 users.append(l)
                 print("User %s found" % l)
 
-            # Sanitizing the input
-            pattern = '[a-zA-Z@\.0-9/: ]'
-            san_users = []
-            db.reset_records()
-            for u in users:
-                ls = u.split(",")
-                usr = []
-                for each in ls:
-                    usr.append(''.join(re.findall(pattern, each)))
-                print("Sanitised user is %s" % str(usr))
-                if len(usr) == 4:
-                    db.add_user(usr[0], usr[1], usr[2], usr[3], None)
-                elif len(usr) == 5:
-                    db.add_user(usr[0], usr[1], usr[2], usr[3], usr[4])
-                else:
-                    a.configure(text="File cannot be found!\nImport the file and try again.")
-                    print("Error encountered! User does not have the expected values.")
-                san_users.append(usr)
-            # TODO Give them option to retry
-            sep.update_label()
-            raise_frame(sep)
+            if len(users) < 5:
+                a.configure(text="File contains less than 5 participants!\n"
+                                 "Ensure the file is correctly formatted and try again", fg="red")
+                play("err")
+            else:
+                # Sanitizing the input
+                pattern = '[a-zA-Z@\.0-9/: ]'
+                san_users = []
+                db.reset_records()
+                for u in users:
+                    ls = u.split(",")
+                    usr = []
+                    for each in ls:
+                        usr.append(''.join(re.findall(pattern, each)).strip())
+                    print("Sanitised user is %s" % str(usr))
+                    if len(usr) == 4:
+                        db.add_user(usr[0], usr[1], usr[2], usr[3], None)
+                    elif len(usr) == 5:
+                        db.add_user(usr[0], usr[1], usr[2], usr[3], usr[4])
+                    else:
+                        a.configure(text="File cannot be found!\nImport the file and try again.")
+                        print("Error encountered! User does not have the expected values.")
+                    san_users.append(usr)
+                # TODO Give them option to retry
+                sep.update_label()
+                raise_frame(sep)
 
 
 class Navigation(Frame):
@@ -225,7 +254,7 @@ class Navigation(Frame):
         for i in (btn, btn1, btn2):
             i.pack(side=LEFT, anchor=W, pady=5, padx=5)
         # TODO Link below with GitHub release version
-        Label(self, text="v0.9 Yordan Angelov Copyright 2018").pack(side=RIGHT, padx=5)
+        Label(self, text="v1.0 Yordan Angelov Copyright 2018").pack(side=RIGHT, padx=5)
 
     @staticmethod
     def home():
@@ -275,7 +304,7 @@ class SendEmailsPage(Frame):
         self.part = len(db.fetch_participants())
         self.lbl = Label(self)
         self.lbl.pack(fill=BOTH, expand=TRUE)
-        self.lb1 = ls = Listbox(master)
+        self.lb1 = Listbox(self)
         self.lb1.pack(fill=BOTH, expand=TRUE, pady=5)
         self.update_label()
         self.pairs = {}
@@ -326,42 +355,41 @@ class SendEmailsPage(Frame):
         print("Starting the emails sending sequence...")
         username = "ten10secretsanta@gmail.com"
         password = "jkvryxsvsnrkioww"
-        i = 0
         try:
             print("Connecting to server...")
             server = SMTP("smtp.gmail.com", 587)
-            server.set_debuglevel(True)
             print("Starting TLS...")
             server.starttls()
             print("Logging in...")
             server.login(username, password)
 
             for k, v in pairs.items():
-                # TODO Add the wishlist if that user has one
-                msg = "\r\n".join([
-                    "From: " + username,
-                    "To: y_angelov@hotmail.com",
-                    # "To:%s" % str(v[2]),
-                    "Subject: You have a new Secret Santa pair!",
-                    "",
-                    "Hi%s,\n\n"
-                    "You are the Secret Santa for%s!\n"
-                    "Choose your gift and send it off to%s,%s.\n\n"
-                    "Have a Merry Christmas and a Happy New Year!"
-                    % (str(k[1]), str(v[1]), str(v[3]), str(v[4]))
-                ])
+                headers = ("From: %s\n"
+                           "To: %s\n"
+                           "Subject: You have a new Secret Santa pair!\n\n"
+                           % (str(k[2]), str(v[2])))
+                if v[5] is not None:
+                    body = ("Hi %s,\n\nYou are the Secret Santa for %s!\n"
+                            "Choose your gift and send it off to %s, %s.\n\n"
+                            "If you're seeking inspiration, take a look at "
+                            "their wishlist: %s\n\n"
+                            "Happy holidays!"
+                            % (str(k[1]), str(v[1]), str(v[3]), str(v[4]), str(v[5])))
+                else:
+                    body = ("Hi %s,\n\nYou are the Secret Santa for %s!\n"
+                            "Choose your gift and send it off to %s, %s.\n\n"
+                            "Happy holidays!"
+                            % (str(k[1]), str(v[1]), str(v[3]), str(v[4])))
                 try:
                     print("Sending email...")
-                    server.sendmail(username, "y_angelov@hotmail.com", msg)
-                    i = i + 1
-                    self.lbl.configure(text="%s emails sent out of %s..." % (i, len(pairs)))
+                    server.sendmail(username, "y_angelov@hotmail.com", headers + body)
                     print("Email sent!")
-                except:
-                    print("Couldn't send email!")
+                except Exception as e:
+                    print("Got this error while trying to send out emails: " + str(e))
 
-            # server.quit()
+            server.quit()
             self.lbl.configure(text="Emails sent!\n"
-                                    "Hope you enjoyed using the app!\n\n"
+                                    "Get back to work now, we're not paying you to mess around!\n\n"
                                     "Use the button below to be redirected to the Feedback page.\n")
             self.btn.configure(text="Leave feedback", command=lambda: raise_frame(lf))
 
@@ -388,12 +416,11 @@ if __name__ == '__main__':
     ep = EnterParticipants(root)
     ip = ImportParticipants(root)
     lf = LeaveFeedback(root)
-    nav = Navigation(root)
     sep = SendEmailsPage(root)
-
     for frame in (s, ep, ip, hmp, lf, sep):
         frame.grid(row=0, column=0, sticky='news', padx=5, pady=5)
 
+    nav = Navigation(root)
     nav.grid(row=1, column=0, sticky='news')
 
     raise_frame(s)

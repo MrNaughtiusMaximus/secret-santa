@@ -16,7 +16,7 @@ Stay tuned, more to follow...
 #### Optional Extras:
 - [ ] App can contain multiple “Nice Lists” so that the same process can be repeated for multiple groups of participants
 - [ ] Can assign a person to multiple “Nice Lists” so that they can participate in multiple gift giving experiences
-- [ ] Participants can submit a wish list which will be emailed to the gifter at time of assignment, providing gift suggestions
+- [x] Participants can submit a wish list which will be emailed to the gifter at time of assignment, providing gift suggestions
 
 _Made with Python 3.7.1_
 
