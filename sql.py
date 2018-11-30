@@ -15,6 +15,7 @@ class SQL:
             self.cursor.execute("""INSERT INTO participants(name, email, house, postcode, wishlist) VALUES(?,?,?,?,?)""",
                                 (name, email, house, postcode, wishlist))
             self.db.commit()
+            print("Added user '%s, %s, %s, %s, %s'" % (name, email, house, postcode, wishlist))
         except Exception as e:
             print("Encountered following error: " + str(e))
             self.db.rollback()
@@ -42,7 +43,6 @@ class SQL:
     def create_participants_table(self):
         try:
             print("Creating table...")
-            # TODO Update schema to not accept empty values
             self.cursor.execute("""
             CREATE TABLE participants(id INTEGER PRIMARY KEY, 
                                       name TEXT NOT NULL, 
