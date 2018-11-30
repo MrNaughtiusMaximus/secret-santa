@@ -3,6 +3,7 @@ from os import path, getcwd
 from playsound import playsound
 from random import randint
 from random import choice
+import webbrowser
 
 from sql import SQL
 
@@ -43,8 +44,6 @@ class StartPage(Frame):
         r2.pack(anchor=W)
         r3 = Radiobutton(self, text="Leave feedback", variable=opt, value=3)
         r3.pack(anchor=W)
-        r4 = Radiobutton(self, text="Skip to randomising", variable=opt, value=4)
-        r4.pack(anchor=W)
         btn = Button(self, text="Continue", command=lambda: self.command(opt), width=10)
         btn.pack(side=BOTTOM, anchor=E, pady=5, padx=5)
 
@@ -59,11 +58,8 @@ class StartPage(Frame):
 
             elif i.get() == 3:
                 # TODO Open feedback page and send email to myself
-                raise_frame(wip)
+                raise_frame(lf)
 
-            # TODO Remove when no longer needed for testing purposes
-            elif i.get() == 4:
-                raise_frame(sep)
         except Exception as e:
             # TODO Add an error bar saying they need to select an option
             print("The user did not select an option")
@@ -174,22 +170,23 @@ class ImportParticipants(Frame):
         lbl = Label(self, text="To import participants successfully, use the following format:\n\n"
               ".csv or .txt files: name, email, house number or name, postcode (list new users on new lines)\n"
               "Example: John Doe, john@email.com, 25, BN10 3PF\n\n"
-              "SQLite .db files: create a table with columns in same order as above\n"
-              "")
+              "SQLite .db files: create a table with columns in same order as above\n\n"
+              "Note: unique email addresses are necessary for the app to work")
         lbl.pack(side=TOP, fill=X)
         lbl2 = Label(self)
         lbl2.pack(side=TOP, fill=X, expand=TRUE)
         lb1 = Listbox(self)
         f = Frame(self)
         f.pack(side=BOTTOM, fill=X, expand=TRUE, anchor=SW)
-        Label(f, text="Enter the file name: ").pack(side=LEFT, anchor=W, fill=X)
-        e = Entry(f)
-        e.pack(side=LEFT, anchor=W, padx=5, fill=X, expand=TRUE)
-        btn = Button(f, text="Import", command=lambda: self.imp(e, lbl, lbl2, lb1), width=10)
-        btn.pack(side=RIGHT, anchor=SE)
+        self.lbl3 = Label(f, text="Enter the file name: ")
+        self.lbl3.pack(side=LEFT, anchor=W, fill=X)
+        self.e = Entry(f)
+        self.e.pack(side=LEFT, anchor=W, padx=5, fill=X, expand=TRUE)
+        self.btn = Button(f, text="Import", command=lambda: self.imp(lbl, lbl2, lb1), width=10)
+        self.btn.pack(side=RIGHT, anchor=SE)
 
-    def imp(self, i, a, a2, lb):
-        file_path = path.join(getcwd(), str(i.get()))
+    def imp(self, a, a2, lb):
+        file_path = path.join(getcwd(), str(self.e.get()))
         if not path.exists(file_path):
             a2.configure(text="File cannot be found!\nImport the file and try again.")
         else:
@@ -206,15 +203,21 @@ class ImportParticipants(Frame):
             san_users = []
             lb.delete(0, END)
             for u in users:
-                print("Sanitizing user %s" % u)
                 ls = u.split(",")
                 usr = []
                 for each in ls:
                     usr.append(''.join(re.findall(pattern, each)))
-                print("Adding sanitized user %s" % usr)
                 lb.insert(users.index(u), "%s, %s" % (usr[1], usr[2]))
+                print("Adding sanitized user to DB:"
+                      "name %s, email %s, house %s, post %s, wish %s" % (usr[1], usr[2], usr[3], usr[4], usr[5]))
+                db.add_user(usr[1], usr[2], usr[3], usr[4], usr[5])
                 san_users.append(usr)
             lb.pack(side=TOP, fill=BOTH, expand=TRUE)
+            # TODO Give them option to retry
+            self.e.pack_forget()
+            self.lbl3.configure(text="Press 'Continue' if you are happy")
+            sep.update_label()
+            self.btn.configure(command=lambda: raise_frame(sep), text="Continue")
             a.configure(text="The following participants have been found:")
 
 
@@ -230,7 +233,7 @@ class Navigation(Frame):
         btn2 = Button(self, text="Reset DB", command=lambda: self.clear_db(), width=10)
         btn2.pack(side=LEFT, anchor=E, pady=5, padx=5)
         # TODO Link below with GitHub release version
-        Label(self, text="v0.3 Yordan Angelov Copyright 2018").pack(side=RIGHT, padx=5)
+        Label(self, text="v0.9 Yordan Angelov Copyright 2018").pack(side=RIGHT, padx=5)
 
     def home(self):
         raise_frame(s)
@@ -245,12 +248,26 @@ class Navigation(Frame):
         raise_frame(s)
 
 
-class WorkInProgress(Frame):
+class LeaveFeedback(Frame):
 
     def __init__(self, master):
         Frame.__init__(self, master)
         self.grid(sticky=NSEW)
-        Label(self, text="SYCHE! YOU THOUGHT IT WAS COMPLETED!").pack(fill=BOTH, expand=TRUE)
+        Label(self, text="If you've enjoyed using the app (or even used it at all!)\n"
+                         "and you're feeling generous, make sure\n you drop me an email "
+                         "on y_angelov@hotmail.com with a brief feedback!\n\n"
+                         "If you're feeling even more generous, you can send me a quick "
+                         "code review.\n\nFinally, for the true Santas among you,\n"
+                         "feel free to submit pull requests with suggestions for improvements!\n\n"
+                         "Repo can be found below:").pack(fill=BOTH, expand=TRUE)
+        link = Label(self, text="GitHub repo", fg="blue", cursor="hand2")
+        link.pack(expand=TRUE)
+        link.bind("<Button-1>", self.go_to_repo)
+        Label(self, text="This is definitely not a virus.").pack(fill=BOTH, expand=TRUE)
+
+    @staticmethod
+    def go_to_repo(event):
+        webbrowser.open_new(r"https://github.com/n4ught1us-max1mus/secret-santa")
 
 
 class SendEmailsPage(Frame):
@@ -318,7 +335,7 @@ class SendEmailsPage(Frame):
         self.lbl.configure(text="Sending emails...")
         print("Starting the emails sending sequence...")
         username = "ten10secretsanta@gmail.com"
-        password = ""
+        password = "jkvryxsvsnrkioww"
         i = 0
         try:
             print("Connecting to server...")
@@ -335,13 +352,13 @@ class SendEmailsPage(Frame):
                 # TODO Add the wishlist if that user has one
                 msg = "\r\n".join([
                     "From: " + username,
-                    "To: %s" % str(v[2]),
+                    "To:%s" % str(v[2]),
                     "Subject: You have a new Secret Santa pair!",
                     "",
-                    "Hi %s,\n\n"
-                    "You are the Secret Santa for %s!\n"
-                    "Choose your gift by 15th December and send it off to %s, %s.\n\n"
-                    "Good luck!"
+                    "Hi%s,\n\n"
+                    "You are the Secret Santa for%s!\n"
+                    "Choose your gift and send it off to%s,%s.\n\n"
+                    "Have a Merry Christmas and a Happy New Year!"
                     % (str(k[1]), str(v[1]), str(v[3]), str(v[4]))
                 ])
                 file.write(msg + ",\n")
@@ -356,10 +373,11 @@ class SendEmailsPage(Frame):
 
             # server.quit()
             file.close()
-            self.lbl.configure(text="""Emails sent!
-            Hope you enjoyed using the app!
-            Leave feedback below or click 'Home' to send more emails""")
-            self.btn.pack_forget()
+            self.lbl.configure(text="Emails sent!\n"
+            "Hope you enjoyed using the app!\n\n"
+            "Use the button below to be redirected to the Feedback page.\n")
+            self.btn.configure(text="Leave feedback", command=lambda: raise_frame(lf))
+
 
         except Exception as e:
             print(e)
@@ -386,11 +404,11 @@ if __name__ == '__main__':
     hmp = HowManyParticipants(root)
     ep = EnterParticipants(root)
     ip = ImportParticipants(root)
-    wip = WorkInProgress(root)
+    lf = LeaveFeedback(root)
     nav = Navigation(root)
     sep = SendEmailsPage(root)
 
-    for frame in (s, ep, ip, hmp, wip, sep):
+    for frame in (s, ep, ip, hmp, lf, sep):
         frame.grid(row=0, column=0, sticky='news')
 
     nav.grid(row=1, column=0, sticky='news')
