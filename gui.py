@@ -404,8 +404,9 @@ if __name__ == '__main__':
     root.title("Secret Santa")
     # Works on Windows 10
     # Only works with .ico files
-    root.iconbitmap("santa.ico")
     root.resizable(width=False, height=False)
+    if "Windows" in platform():
+        root.iconbitmap("santa.ico")
 
     # Starting up SQLite
     db = SQL()
