@@ -1,7 +1,6 @@
 ![Santa Icon](https://raw.githubusercontent.com/n4ught1us-max1mus/secret-santa/master/santa.ico)
 # Yordan's Secret Santa app! 
-Stay tuned, more to follow...
-
+_Feel free to send any feedback to y_angelov@hotmail.com or just submit a PR with suggestions_
 ## Requirements:
 #### Acceptance Criteria:
 - [x] The app must contain the name, email address and mailing address for each person
