@@ -40,7 +40,7 @@ class StartPage(Frame):
         opt = IntVar()
         r1 = Radiobutton(self, text="Add participants manually", variable=opt, value=1)
         r1.pack(anchor=W)
-        r2 = Radiobutton(self, text="Import participants from a txt file", variable=opt, value=2)
+        r2 = Radiobutton(self, text="Import participants", variable=opt, value=2)
         r2.pack(anchor=W)
         r3 = Radiobutton(self, text="Leave feedback", variable=opt, value=3)
         r3.pack(anchor=W)
@@ -82,7 +82,6 @@ class HowManyParticipants(Frame):
         btn.pack(fill=X, side=RIGHT, anchor=SE)
 
     def command(self, i):
-        print("The user inputted %s" % str(i.get()))
         try:
             if int(i.get()) < 5:
                 self.lbl.configure(text="You need to enter at least 5 participants!")
@@ -101,42 +100,40 @@ class EnterParticipants(Frame):
         Frame.__init__(self, master)
         self.grid(sticky=NSEW, padx=5, pady=5)
 
-        # TODO Works, but is clicked whenever the app starts - resolve as part of post-MVP
-        # self.bind('<Return>', self.add_user("", "", "", ""))
-
-        self.exp_part = 0
-        self.ent_part = 0
+        (self.exp_part, self.ent_part) = 0, 0
         Label(self, text="Expecting " + str(self.exp_part) + " more participants")
         self.exp = Label(self, text="You have entered %s out of %s participants" % (self.exp_part, self.ent_part))
-        self.exp.grid(row=0, column=0, columnspan=3)
         self.err = Label(self)
-        self.err.grid(row=1, column=0, columnspan=3)
-        Label(self, text="Enter the participant’s details:").grid(row=2, column=0, columnspan=3)
-        Label(self, text="Name: ").grid(row=4, column=0, sticky=W)
-        name = Entry(self)
-        name.grid(row=4, column=1, columnspan=2, sticky=NSEW)
-        Label(self, text="Email: ").grid(row=5, column=0, sticky=W)
-        email = Entry(self)
-        email.grid(row=5, column=1, columnspan=2, sticky=NSEW)
-        Label(self, text="Address number: ").grid(row=6, column=0, sticky=W)
-        house = Entry(self)
-        house.grid(row=6, column=1, sticky=NSEW)
-        Label(self, text="Postcode: ").grid(row=7, column=0, sticky=W)
-        post = Entry(self)
-        post.grid(row=7, column=1, sticky=NSEW)
-        Label(self, text="Wishlist URL (optional): ").grid(row=8, column=0, sticky=W, columnspan=3)
-        wish = Entry(self)
-        wish.grid(row=8, column=1, sticky=NSEW)
+        info = Label(self, text="Enter the participant’s details:")
+        f = Frame(self)
+        for a in (self.exp, self.err, info, f):
+            a.pack(fill=BOTH, expand=TRUE, side=TOP)
+
+        labels = ["Name: ", "Email: ", "Address number: ", "Postcode: ", "Wishlist URL (optional): "]
+        name = Entry(f)
+        email = Entry(f)
+        house = Entry(f)
+        post = Entry(f)
+        wish = Entry(f)
+        entries = [name, email, house, post, wish]
+        # Positioning everything accordingly
+        for i in range(len(labels)):
+            print("Row number is: " + str(i))
+            Label(f, text=labels[i]).grid(row=i, column=0, sticky=W)
+            f.rowconfigure(i, weight=1)
+            entries[i].grid(row=i, column=1, columnspan=4, sticky=NSEW)
+        f.columnconfigure(1, weight=1)
         btn = Button(self, text="Continue",
                      command=lambda: self.add_user(name, email, house, post, wish),
                      width=10)
-        btn.grid(row=9, column=2, sticky=E)
+        btn.pack(side=BOTTOM, expand=TRUE, anchor=SE)
 
     def update_bar_re_adding_user(self):
         self.err.configure(text="User added!")
         self.ent_part = self.ent_part + 1
         self.exp.configure(text="You have entered %s out of %s participants" % (self.ent_part, self.exp_part))
 
+    # TODO Check error handling
     def add_user(self, name, email, house, post, wish):
         try:
             print("Adding user " + name.get())
@@ -168,29 +165,30 @@ class ImportParticipants(Frame):
         Frame.__init__(self, master)
         self.grid(sticky=NSEW, padx=5, pady=5)
         lbl = Label(self, text="To import participants successfully, use the following format:\n\n"
-              ".csv or .txt files: name, email, house number or name, postcode (list new users on new lines)\n"
-              "Example: John Doe, john@email.com, 25, BN10 3PF\n\n"
-              "SQLite .db files: create a table with columns in same order as above\n\n"
-              "Note: unique email addresses are necessary for the app to work")
+                               ".csv or .txt files: name, email, house number or name, postcode\n"
+                               "Example: John Doe, john@email.com, 25, BN10 3PF\n"
+                               "See example.txt if unsure.\n\n"
+                               "SQLite .db files: create a table with columns in same order as above\n\n"
+                               "Note: unique email addresses are necessary for the app to work")
         lbl.pack(side=TOP, fill=X)
         lbl2 = Label(self)
         lbl2.pack(side=TOP, fill=X, expand=TRUE)
-        lb1 = Listbox(self)
         f = Frame(self)
         f.pack(side=BOTTOM, fill=X, expand=TRUE, anchor=SW)
         self.lbl3 = Label(f, text="Enter the file name: ")
         self.lbl3.pack(side=LEFT, anchor=W, fill=X)
         self.e = Entry(f)
         self.e.pack(side=LEFT, anchor=W, padx=5, fill=X, expand=TRUE)
-        self.btn = Button(f, text="Import", command=lambda: self.imp(lbl, lbl2, lb1), width=10)
+        self.btn = Button(f, text="Import", command=lambda: self.imp(lbl2), width=10)
         self.btn.pack(side=RIGHT, anchor=SE)
 
-    def imp(self, a, a2, lb):
+    def imp(self, a):
         file_path = path.join(getcwd(), str(self.e.get()))
         if not path.exists(file_path):
-            a2.configure(text="File cannot be found!\nImport the file and try again.")
+            a.configure(text="File cannot be found!\nImport the file and try again.")
         else:
-            #TODO Add check whether filed ends in .csv or .txt and extract data accordingly
+            # TODO Add check whether filed ends in .csv or .txt and extract data accordingly
+            # TODO Add error handling try/except
             file = open(file_path, "r")
             users = []
             # Getting all users
@@ -199,26 +197,28 @@ class ImportParticipants(Frame):
                 print("User %s found" % l)
 
             # Sanitizing the input
-            pattern = '[a-zA-Z@\.0-9 ]'
+            pattern = '[a-zA-Z@\.0-9/: ]'
             san_users = []
-            lb.delete(0, END)
+            db.reset_records()
             for u in users:
                 ls = u.split(",")
                 usr = []
                 for each in ls:
                     usr.append(''.join(re.findall(pattern, each)))
-                lb.insert(users.index(u), "%s, %s" % (usr[1], usr[2]))
+                print("Sanitised user is %s" % str(usr))
+                if len(usr) == 4:
+                    db.add_user(usr[0], usr[1], usr[2], usr[3])
+                elif len(usr) == 5:
+                    db.add_user(usr[0], usr[1], usr[2], usr[3], usr[4])
+                else:
+                    print("Error encountered! User does not have the expected values.")
                 print("Adding sanitized user to DB:"
-                      "name %s, email %s, house %s, post %s, wish %s" % (usr[1], usr[2], usr[3], usr[4], usr[5]))
-                db.add_user(usr[1], usr[2], usr[3], usr[4], usr[5])
+                      "name %s, email %s, house %s, post %s, wish %s" % (usr[0], usr[1], usr[2], usr[3], usr[4]))
+                db.add_user(usr[0], usr[1], usr[2], usr[3], usr[4])
                 san_users.append(usr)
-            lb.pack(side=TOP, fill=BOTH, expand=TRUE)
             # TODO Give them option to retry
-            self.e.pack_forget()
-            self.lbl3.configure(text="Press 'Continue' if you are happy")
             sep.update_label()
-            self.btn.configure(command=lambda: raise_frame(sep), text="Continue")
-            a.configure(text="The following participants have been found:")
+            raise_frame(sep)
 
 
 class Navigation(Frame):
@@ -235,14 +235,17 @@ class Navigation(Frame):
         # TODO Link below with GitHub release version
         Label(self, text="v0.9 Yordan Angelov Copyright 2018").pack(side=RIGHT, padx=5)
 
-    def home(self):
+    @staticmethod
+    def home():
         raise_frame(s)
 
-    def close(self):
+    @staticmethod
+    def close():
         db.close()
         exit()
 
-    def clear_db(self):
+    @staticmethod
+    def clear_db():
         print("DB dropped!")
         db.reset_records()
         raise_frame(s)
@@ -409,7 +412,7 @@ if __name__ == '__main__':
     sep = SendEmailsPage(root)
 
     for frame in (s, ep, ip, hmp, lf, sep):
-        frame.grid(row=0, column=0, sticky='news')
+        frame.grid(row=0, column=0, sticky='news', padx=5, pady=5)
 
     nav.grid(row=1, column=0, sticky='news')
 
