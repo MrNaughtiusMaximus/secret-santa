@@ -1,6 +1,12 @@
 ![Santa Icon](https://raw.githubusercontent.com/n4ught1us-max1mus/secret-santa/master/santa.ico)
 # Yordan's Secret Santa app! 
 _Feel free to send any feedback to y_angelov@hotmail.com or just submit a PR with suggestions_
+
+To run, ensure you have Python 3.6+ and the requirements.txt installed. Open a terminal, navigate to the folder, 
+then start the app using:
+
+`$python gui.py`
+
 ## Requirements:
 #### Acceptance Criteria:
 - [x] The app must contain the name, email address and mailing address for each person
