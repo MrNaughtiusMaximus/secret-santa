@@ -352,7 +352,7 @@ class SendEmailsPage(Frame):
                 headers = ("From: %s\n"
                            "To: %s\n"
                            "Subject: You have a new Secret Santa pair!\n\n"
-                           % (str(k[2]), str(v[2])))
+                           % (username, str(k[2])))
                 if v[5] is not None:
                     body = ("Hi %s,\n\nYou are the Secret Santa for %s!\n"
                             "Choose your gift and send it off to %s, %s.\n\n"
@@ -367,7 +367,7 @@ class SendEmailsPage(Frame):
                             % (str(k[1]), str(v[1]), str(v[3]), str(v[4])))
                 try:
                     print("Sending email...")
-                    server.sendmail(username, str(v[2]), headers + body)
+                    server.sendmail(username, str(k[2]), headers + body)
                     print("Email sent!")
                 except Exception as e:
                     print("Got this error while trying to send out emails: " + str(e))
