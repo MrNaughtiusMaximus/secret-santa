@@ -367,7 +367,7 @@ class SendEmailsPage(Frame):
                             % (str(k[1]), str(v[1]), str(v[3]), str(v[4])))
                 try:
                     print("Sending email...")
-                    server.sendmail(username, str(v[2])), headers + body)
+                    server.sendmail(username, str(v[2]), headers + body)
                     print("Email sent!")
                 except Exception as e:
                     print("Got this error while trying to send out emails: " + str(e))
